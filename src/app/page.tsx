@@ -1,203 +1,236 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from 'react';
+import Chatbot from './components/ChatBot';
 
-interface Message {
-  id: string;
-  text: string;
-  isUser: boolean;
-  intent?: string;
-  confidence?: number;
-  timestamp: Date;
+function useTypingAnimation(text: string, speed: number = 100) {
+  const [typedText, setTypedText] = useState("");
+  useEffect(() => {
+    let i = 0;
+    setTypedText("");
+    const interval = setInterval(() => {
+      setTypedText((prev) => prev + text.charAt(i));
+      i++;
+      if (i >= text.length) clearInterval(interval);
+    }, speed);
+    return () => clearInterval(interval);
+  }, [text, speed]);
+  return typedText;
 }
 
-export default function ModernChatbot() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "👋 Hi! I'm your Intent Classifier. Ask me something and I'll classify it.",
-      isUser: false,
-      timestamp: new Date(),
-    },
-  ]);
-  const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+export default function HomePage() {
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [currentCard, setCurrentCard] = useState(0);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const mainText =
+    "   Eager to know your Intents?    Explore the power of Natural Language understanding with our ATIS Intent Classifier. Simply ask a query related to flight information, and our bot will classify your intent.";
+  const typedText = useTypingAnimation(mainText, 50);
+
+  const carouselCards = [
+    {
+      id: 1,
+      image: "https://placehold.co/600x400/FF5733/FFFFFF?text=Flight+Queries",
+      title: "Flight Information",
+      description: "Get details about flights, schedules, and availability for your travel needs."
+    },
+    {
+      id: 2,
+      image: "https://placehold.co/600x400/33FF57/FFFFFF?text=Flight+Time",
+      title: "Flight Time & Schedule",
+      description: "Check departure times, arrival schedules, and flight durations."
+    },
+    {
+      id: 3,
+      image: "https://placehold.co/600x400/3357FF/FFFFFF?text=Airfare+Pricing",
+      title: "Airfare & Pricing",
+      description: "Compare ticket prices, find deals, and check fare information."
+    },
+    {
+      id: 4,
+      image: "https://placehold.co/600x400/FF33A1/FFFFFF?text=Aircraft+Info",
+      title: "Aircraft Details",
+      description: "Learn about aircraft types, seating configurations, and plane specifications."
+    },
+    {
+      id: 5,
+      image: "https://placehold.co/600x400/A133FF/FFFFFF?text=Ground+Service",
+      title: "Ground Services",
+      description: "Information about ground transportation, parking, and airport amenities."
+    },
+    {
+      id: 6,
+      image: "https://placehold.co/600x400/FF9400/FFFFFF?text=Airline+Details",
+      title: "Airline Information",
+      description: "Discover airline policies, services, baggage rules, and company details."
+    },
+    {
+      id: 7,
+      image: "https://placehold.co/600x400/0088CC/FFFFFF?text=Codes+%26+Terms",
+      title: "Abbreviations & Codes",
+      description: "Understand airport codes, airline abbreviations, and aviation terminology."
+    }
+  ];
+
+  const totalCards = carouselCards.length;
+
+  const nextCard = () => setCurrentCard((prev) => (prev + 1) % totalCards);
+  const prevCard = () => setCurrentCard((prev) => (prev - 1 + totalCards) % totalCards);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSend = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!input.trim()) return;
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: input,
-      isUser: true,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setIsTyping(true);
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMessage.text }),
-      });
-
-      const data = await res.json();
-
-      if (data.error) {
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          text: `⚠️ Error: ${data.error}`,
-          isUser: false,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, errorMessage]);
-      } else {
-        const botMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          text: "Here's the Intent and Confidence!",
-          isUser: false,
-          intent: data.intent,
-          confidence: data.confidence,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, botMessage]);
-      }
-    } catch (error) {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: "❌ Couldn't connect to the server.",
-        isUser: false,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    }
-    setIsTyping(false);
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+    const timer = setInterval(nextCard, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <>
-      {/* Add Google Fonts for Material Icons */}
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
-      
-      {/* Main centering container for the whole chatbox */}
-      <div className="flex items-center justify-center min-h-screen bg-purple-50 p-6">
-        {/* Chatbox container - Increased width for more breadth */}
-        <div className="w-[750px] max-w-4xl h-[600px] rounded-3xl shadow-2xl bg-white overflow-hidden border border-gray-100 flex flex-col">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-700 p-6 flex items-center justify-between relative rounded-t-3xl shadow-md">
-            <div className="flex items-center gap-4">
-              {/* Robot SVG avatar/logo in header */}
-              <svg className="w-10 h-10 text-purple-100" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 1024 1024">
-                <path
-                  d="M738.3 287.6H285.7c-59 0-106.8 47.8-106.8 106.8v303.1c0 59 47.8 106.8 106.8 106.8h81.5v111.1c0 .7.8 1.1 1.4.7l166.9-110.6 41.8-.8h117.4l43.6-.4c59 0 106.8-47.8 106.8-106.8V394.5c0-59-47.8-106.9-106.8-106.9zM351.7 448.2c0-29.5 23.9-53.5 53.5-53.5s53.5 23.9 53.5 53.5-23.9 53.5-53.5 53.5-53.5-23.9-53.5-53.5zm157.9 267.1c-67.8 0-123.8-47.5-132.3-109h264.6c-8.6 61.5-64.5 109-132.3 109zm110-213.7c-29.5 0-53.5-23.9-53.5-53.5s23.9-53.5 53.5-53.5 53.5 23.9 53.5 53.5-23.9 53.5-53.5 53.5zM867.2 644.5V453.1h26.5c19.4 0 35.1 15.7 35.1 35.1v121.1c0 19.4-15.7 35.1-35.1 35.1h-26.5zM95.2 609.4V488.2c0-19.4 15.7-35.1 35.1-35.1h26.5v191.3h-26.5c-19.4 0-35.1-15.7-35.1-35.1zM561.5 149.6c0 23.4-15.6 43.3-36.9 49.7v44.9h-30v-44.9c-21.4-6.5-36.9-26.3-36.9-49.7 0-28.6 23.3-51.9 51.9-51.9s51.9 23.3 51.9 51.9z"
-                  fill="currentColor"
+      {/* Background with airplane image */}
+      <div
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat opacity-25 z-0 pointer-events-none"
+        style={{ backgroundImage: 'url("/assets/aeroplane.jpg")' }}
+        aria-hidden="true"
+      />
+
+
+<header className={`relative ${isChatbotOpen ? 'z-10' : 'z-20'} bg-gradient-to-r from-slate-900/90 via-gray-800/90 to-zinc-900/90 backdrop-blur-md shadow-2xl border-b border-white/10 rounded-b-2xl`}>
+  <div className="container mx-auto px-6 py-4">
+    <div className="flex items-center justify-center space-x-3">
+      {/* Optional: Add an icon */}
+      <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center">
+        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+        </svg>
+      </div>
+      <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent drop-shadow-xl tracking-tight">
+        ChatBot Intent Classification
+      </h1>
+    </div>
+  </div>
+</header>
+
+
+
+      <div className="relative flex flex-col items-center text-center overflow-hidden z-10">
+        {/* Main ATIS content with typing animation - First section */}
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="max-w-10xl text-center px-7">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-8 drop-shadow-lg">
+              {typedText.split('?')[0]}?
+              {typedText.includes('?') && <span className="animate-pulse text-blue-500">|</span>}
+            </h1>
+            {typedText.length > mainText.split('?')[0].length + 1 && (
+              <p className="text-lg md:text-xl text-slate-700 max-w-4xl mb-12 leading-relaxed mx-auto px-4">
+                {typedText.substring(mainText.split('?')[0].length + 2)}
+                {typedText.length === mainText.length && <span className="animate-pulse text-blue-600">|</span>}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Second section - Classification of Intents and Carousel */}
+        <div className="w-full min-h-screen flex flex-col justify-center py-16">
+          {/* Section Title for Carousel */}
+          <div className="w-full text-center mb-12 px-4">
+            <h2 className="text-4xl md:text-5xl font-extrabold text-slate-800 mb-4 drop-shadow-md bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Classification of Intents
+            </h2>
+            <div className="w-32 h-1 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 mx-auto rounded-full shadow-lg"></div>
+          </div>
+
+          {/* Horizontal Sliding Carousel Section */}
+          <div className="relative w-full max-w-6xl mb-16 px-4 mx-auto">
+            <div className="overflow-hidden rounded-xl">
+              <div
+                className="flex transition-transform duration-700 ease-in-out"
+                style={{
+                  transform: `translateX(-${currentCard * 340}px)`,
+                  width: `${totalCards * 340}px`,
+                }}
+              >
+                {carouselCards.map((card, index) => (
+                  <div
+                    key={card.id}
+                    className="flex-none w-80 mx-2 rounded-xl shadow-xl bg-white p-6 cursor-pointer hover:shadow-2xl transition-shadow duration-300"
+                    onClick={() => setCurrentCard(index)}
+                  >
+                    <img
+                      src={card.image}
+                      alt={card.title}
+                      className="w-full h-40 object-cover rounded-md mb-4"
+                    />
+                    <h3 className="text-xl font-semibold text-gray-800 mb-2">{card.title}</h3>
+                    <p className="text-sm text-gray-600">{card.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Carousel Navigation Arrows */}
+            <button
+              onClick={prevCard}
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-3 rounded-full z-20 hover:bg-opacity-75 transition-colors"
+              aria-label="Previous card"
+            >
+              <span className="material-symbols-rounded text-3xl">arrow_back_ios</span>
+            </button>
+            <button
+              onClick={nextCard}
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-gray-800 bg-opacity-50 text-white p-3 rounded-full z-20 hover:bg-opacity-75 transition-colors"
+              aria-label="Next card"
+            >
+              <span className="material-symbols-rounded text-3xl">arrow_forward_ios</span>
+            </button>
+            <div className="flex justify-center mt-6 space-x-2">
+              {carouselCards.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentCard(index)}
+                  className={`w-3 h-3 rounded-full transition-colors duration-300 ${
+                    index === currentCard ? 'bg-purple-600' : 'bg-gray-300'
+                  }`}
+                  aria-label={`Go to slide ${index + 1}`}
                 />
-              </svg>
-              <h2 className="text-2xl text-white font-bold leading-none">Intent Classifier</h2>
+              ))}
             </div>
           </div>
-
-          {/* Chat Body */}
-          <div className="flex-1 bg-gradient-to-br from-purple-50 to-indigo-100 p-6 overflow-y-auto space-y-4">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}
-              >
-                {!message.isUser && (
-                  <svg className="w-8 h-8 mt-auto mr-3 text-indigo-700 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-                    <path
-                      d="M738.3 287.6H285.7c-59 0-106.8 47.8-106.8 106.8v303.1c0 59 47.8 106.8 106.8 106.8h81.5v111.1c0 .7.8 1.1 1.4.7l166.9-110.6 41.8-.8h117.4l43.6-.4c59 0 106.8-47.8 106.8-106.8V394.5c0-59-47.8-106.9-106.8-106.9zM351.7 448.2c0-29.5 23.9-53.5 53.5-53.5s53.5 23.9 53.5 53.5-23.9 53.5-53.5 53.5-53.5-23.9-53.5-53.5zm157.9 267.1c-67.8 0-123.8-47.5-132.3-109h264.6c-8.6 61.5-64.5 109-132.3 109zm110-213.7c-29.5 0-53.5-23.9-53.5-53.5s23.9-53.5 53.5-53.5 53.5 23.9 53.5 53.5-23.9 53.5-53.5 53.5zM867.2 644.5V453.1h26.5c19.4 0 35.1 15.7 35.1 35.1v121.1c0 19.4-15.7 35.1-35.1 35.1h-26.5zM95.2 609.4V488.2c0-19.4 15.7-35.1 35.1-35.1h26.5v191.3h-26.5c-19.4 0-35.1-15.7-35.1-35.1zM561.5 149.6c0 23.4-15.6 43.3-36.9 49.7v44.9h-30v-44.9c-21.4-6.5-36.9-26.3-36.9-49.7 0-28.6 23.3-51.9 51.9-51.9s51.9 23.3 51.9 51.9z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                )}
-                <div
-                  className={`px-5 py-3 rounded-2xl max-w-[70%] text-sm shadow-md ${
-                    message.isUser
-                      ? "bg-blue-500 text-white rounded-br-none ml-auto"
-                      : "bg-white text-gray-800 rounded-bl-none mr-auto border border-gray-200"
-                  }`}
-                >
-                  <span
-                    dangerouslySetInnerHTML={{
-                      __html: message.text,
-                    }}
-                  />
-                  {message.intent && !message.isUser && (
-                    <div className="mt-3 text-xs bg-green-50 text-green-800 border border-green-200 p-3 rounded-lg">
-                      <strong>Intent:</strong> {message.intent}
-                      {message.confidence !== undefined && (
-                        <>
-                          <br />
-                          <strong>Confidence:</strong> {(message.confidence * 100).toFixed(1)}%
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-
-            {isTyping && (
-              <div className="mb-3 flex justify-start">
-                <div className="px-4 py-2 rounded-xl bg-gray-200 text-gray-600 text-sm">
-                  <span className="animate-pulse">Processing...</span>
-                </div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Footer - Input Area */}
-          <form
-            className="bg-white border-t border-gray-200 flex items-center p-5 gap-3"
-            onSubmit={handleSend}
-          >
-            <textarea
-              placeholder="Type your message..."
-              className="flex-1 text-sm border border-gray-300 rounded-full py-3 px-5 resize-none focus:outline-none focus:ring-2 focus:ring-blue-200 h-12 overflow-hidden"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              rows={1}
-              required
-            />
-            {/* Send button with better visibility */}
-            <button
-              type="submit"
-              className="bg-blue-500 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-blue-600 disabled:opacity-50 shadow-lg transition-all duration-200 hover:scale-105"
-              disabled={!input.trim() || isTyping}
-              aria-label="Send"
-            >
-              {/* Use SVG icon as fallback if Material Icons don't load */}
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19V6m0 0L5 13m7-7l7 7" />
-              </svg>
-            </button>
-          </form>
         </div>
+
+        {/* Chatbot Toggle Button - Bottom Right */}
+        {!isChatbotOpen && (
+          <button
+            onClick={() => setIsChatbotOpen(true)}
+            className="fixed bottom-8 right-8 z-50 bg-purple-600 text-white rounded-full shadow-lg w-16 h-16 flex items-center justify-center text-3xl transition-all duration-300 hover:scale-110 hover:bg-purple-700 animate-bounce-in"
+            aria-label="Open Chatbot"
+          >
+            <span className="material-symbols-rounded">chat</span>
+          </button>
+        )}
+
+        {/* Chatbot Overlay */}
+        {isChatbotOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-end bg-black bg-opacity-60 transition-opacity duration-300">
+            <div className="relative h-full flex items-center justify-end p-4">
+              <Chatbot />
+              <button
+                onClick={() => setIsChatbotOpen(false)}
+                className="absolute top-4 right-4 text-white hover:text-gray-200 z-50 p-2 rounded-full bg-black bg-opacity-30 hover:bg-opacity-50 transition-colors"
+                aria-label="Close Chatbot"
+              >
+                <span className="material-symbols-rounded text-3xl">close</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        <style jsx>{`
+          @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); opacity: 1; }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+          }
+          .animate-bounce-in { 
+            animation: bounceIn 0.8s ease-out forwards 1s; 
+          }
+        `}</style>
       </div>
     </>
   );
