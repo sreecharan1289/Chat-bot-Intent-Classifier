@@ -129,12 +129,14 @@ export default function HomePage() {
         {/* Second section - Classification of Intents and Carousel */}
         <div className="w-full min-h-screen flex flex-col justify-center py-16">
           {/* Section Title for Carousel */}
-          <div className="w-full text-center mb-12 px-4">
-            <h2 className="text-4xl md:text-5xl font-extrabold text-slate-800 mb-4 drop-shadow-md bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Classification of Intents
-            </h2>
-            <div className="w-32 h-1 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 mx-auto rounded-full shadow-lg"></div>
-          </div>
+{/* Section Title for Carousel */}
+<div className="w-full text-center mb-12 px-4">
+  <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4 drop-shadow-md">
+    Classification of Intents
+  </h2>
+  <div className="w-32 h-1 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 mx-auto rounded-full shadow-lg"></div>
+</div>
+
 
           {/* Horizontal Sliding Carousel Section */}
           <div className="relative w-full max-w-6xl mb-16 px-4 mx-auto">
